@@ -3,7 +3,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 
-
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -14,11 +14,19 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+
+
+
 import javax.swing.JLabel;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Vector;
 import java.awt.event.ActionEvent;
 import java.awt.SystemColor;
 import java.awt.Button;
@@ -30,6 +38,7 @@ import javax.swing.JTable;
 import javax.swing.border.BevelBorder;
 import java.awt.Choice;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.border.MatteBorder;
 import javax.swing.border.EtchedBorder;
@@ -50,32 +59,40 @@ public class GUI extends JFrame {
 	private JLabel icono;
 	private JTextArea txtrBienvenidoALa;
 	private JPanel panel2;
-	private JComboBox comboBox;
+	private JComboBox<String> comboBox;
 	private JLabel lblGnero;
 	private JLabel lblCanciones;
 	private JLabel lblCreaTuPlaylist;
 	private JLabel lblNewLabel;
 	private JButton btnAgregar;
 	private JLabel lblNewLabel_1;
-	private DefaultTableModel tablaR;
-	private JTable tbInformacion;
-	private JTable table;
-	private JLabel lblNombreArtista;
+	private JTable tabla;
+	private JTable tabla3;
+	private JTable tabla2;
 	private JPanel panel_1;
 	private JLabel lblPlaylistDelUsuario;
 	private JPanel panel_2;
-	private JLabel label;
 	private JPanel panel_3;
 	private JPanel panel_4;
 	private JButton button;
 	private JPanel panel_5;
 	private JLabel lblCancionesRecomendadas;
 	private JLabel lblAPartirDe;
-	private JLabel lblNombreArtista_1;
 	private JScrollPane scrollPane;
 	private JButton button_1;
 	private JPanel panel_6;
 	private JLabel lblNewLabel_2;
+	private final Vector<String> Generos;
+	private final String [] d={"NOMBRE","ARTISTA"};
+	private Vector<String> Canciones;
+	private Vector<String> Artistas;
+	private DbFunctions database;
+	private String[][] info;
+	private MiModelo model;
+	private MiModelo model2;
+	private MiModelo model3;
+	private int contador;
+	private String[][] playlist;
 	
 
 
@@ -87,6 +104,7 @@ public class GUI extends JFrame {
 				
 					GUI window = new GUI();
 					window.inicio.setVisible(true);
+					
 				
 	}
 
@@ -94,12 +112,15 @@ public class GUI extends JFrame {
 	 * Create the frame.
 	 */
 	public GUI() {
-		
+		database = new DbFunctions();
+		Generos = database.getGenero();
+		contador=0;
 		initialize();
 		
 	}
 	
 	public void initialize(){
+		
 		
 		principal = new JFrame();
 		principal.getContentPane().setBackground(Color.GRAY);
@@ -124,7 +145,9 @@ public class GUI extends JFrame {
         principal.getContentPane().add(panel2);
         panel2.setLayout(null);
         
-        comboBox = new JComboBox();
+        comboBox = new JComboBox(Generos);
+        comboBox.addActionListener(new MusicListener());
+        comboBox.addItemListener((ItemListener) new MusicListener());
         comboBox.setBackground(Color.GRAY);
         comboBox.setBounds(10, 39, 95, 20);
         panel2.add(comboBox);
@@ -142,42 +165,37 @@ public class GUI extends JFrame {
         panel2.add(lblCanciones);
         
         btnAgregar = new JButton("");
+        btnAgregar.addActionListener(new MusicListener());
         btnAgregar.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn3.png"));
         btnAgregar.setBounds(320, 186, 108, 33);
         panel2.add(btnAgregar);
         
-       
-        
-        
-      //creación de los elememtos que componen la lista 
-        String[] nombres = {"Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena","Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena"}; 
-        //creación del objeto lista 
-        JList lista = new JList(nombres); 
-        lista.setSelectionForeground(Color.GRAY);
-        lista.setForeground(Color.BLACK);
-        lista.setBackground(Color.WHITE);
-        lista.setFont(new Font("Arial", Font.PLAIN, 12));
-        //se cambia la orientación de presentación y el ajuste 
-       
-        //selecciona un elemento de la lista 
-        
-        //recoge el indice de los seleccionados 
-        int[] indices = lista.getSelectedIndices(); 
-        // aquí se crea el objeto, es decir la barra de desplazamiento 
-        JScrollPane barraDesplazamiento = new JScrollPane(lista); 
-        barraDesplazamiento.setViewportBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-        barraDesplazamiento.setBorder(new MatteBorder(1, 1, 1, 1, (Color) new Color(0, 0, 0)));
-        barraDesplazamiento.setBounds(10, 115, 274, 211); 
-        //Agrega la barra de desplazamiento al panel 
-        panel2.add(barraDesplazamiento); 
-        
-        lblNombreArtista = new JLabel("NOMBRE                                     ARTISTA");
-        lblNombreArtista.setFont(new Font("Arial", Font.BOLD, 12));
-        lblNombreArtista.setForeground(Color.WHITE);
-        lblNombreArtista.setBounds(20, 95, 261, 14);
-        panel2.add(lblNombreArtista);
+		String[][] info={};
+		
+		model=new MiModelo();
+		model.setDataVector(info,d);
+		
+		
+		tabla=new JTable(model);
+		tabla.setBounds(10, 115, 274, 211);
+	    tabla.getTableHeader().setFont(new Font("arial",Font.BOLD,12));
+	    tabla.getTableHeader().setForeground(Color.WHITE);
+	    tabla.getTableHeader().setBackground(new Color(63, 63, 112));
+	    tabla.setShowVerticalLines(false);
+	    tabla.setBackground(Color.GRAY);
+	    tabla.setForeground(Color.WHITE);
+	    tabla.setFont(new Font("arial",Font.BOLD,12));
+	    tabla.setGridColor(Color.LIGHT_GRAY);
+	    tabla.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+	
+	    
+	    JScrollPane scroll=new JScrollPane(tabla);
+	    scroll.setBackground(new Color(63, 63, 112));
+	    scroll.setForeground(Color.WHITE);
+	    scroll.setFont(new Font("Calibri", Font.PLAIN, 12));
+	    scroll.setBounds(10, 95, 274, 231);
+	    panel2.add(scroll);
         
       
         
@@ -195,38 +213,43 @@ public class GUI extends JFrame {
         principal.getContentPane().add(panel_1);
         panel_1.setLayout(null);
         
-        label = new JLabel("NOMBRE                                     ARTISTA");
-        label.setBounds(45, 22, 210, 15);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Arial", Font.BOLD, 12));
-        panel_1.add(label);
+		Object[][] info2={};
+		
+		model2=new MiModelo();
+		model2.setDataVector(info2, d);
+		
+		tabla2=new JTable(model2);
+		tabla2.setBounds(10, 46, 270, 22);
+		tabla2.getTableHeader().setFont(new Font("arial",Font.BOLD,12));
+		tabla2.getTableHeader().setForeground(Color.WHITE);
+		tabla2.getTableHeader().setBackground(new Color(63, 63, 112));
+		tabla2.setShowVerticalLines(false);
+		tabla2.setBackground(Color.GRAY);
+		tabla2.setForeground(Color.WHITE);
+		tabla2.setFont(new Font("arial",Font.BOLD,12));
+		tabla2.setGridColor(Color.LIGHT_GRAY);
+	    tabla2.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+	    
+	    JScrollPane scroll2=new JScrollPane(tabla2);
+	    scroll2.setFont(new Font("Calibri", Font.PLAIN, 12));
+	    scroll2.setBounds(10, 34, 270, 246);
+	    panel_1.add(scroll2);
         
-      //creación de los elememtos que componen la lista 
-        String[] nombres2 = {"Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena","Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena","Macarena","Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena"}; 
-        //creación del objeto lista 
-        JList lista2 = new JList(nombres2); 
-        lista2.setSelectionForeground(Color.GRAY);
-        lista2.setForeground(Color.BLACK);
-        lista2.setBackground(Color.WHITE);
-        lista2.setFont(new Font("Arial", Font.PLAIN, 12));
-       
-        //recoge el indice de los seleccionados 
-        int[] indices2 = lista2.getSelectedIndices(); 
-        // aquí se crea el objeto, es decir la barra de desplazamiento 
-        JScrollPane barraDesplazamiento2 = new JScrollPane(lista2); 
-        barraDesplazamiento2.setViewportBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-        barraDesplazamiento2.setBorder(new MatteBorder(1, 1, 1, 1, (Color) new Color(0, 0, 0)));
-        barraDesplazamiento2.setBounds(10, 46, 270, 227); 
-        //Agrega la barra de desplazamiento al panel 
-        panel_1.add(barraDesplazamiento2); 
+	        
+	        
+      
         
         button = new JButton("");
         button.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn4.png"));
         button.setBounds(99, 291, 108, 33);
         panel_1.add(button);
+        
+        JLabel label = new JLabel("CANCIONES");
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Consolas", Font.BOLD, 14));
+        label.setBounds(10, 11, 95, 14);
+        panel_1.add(label);
         
         
         lblPlaylistDelUsuario = new JLabel("PLAYLIST DEL USUARIO");
@@ -267,35 +290,30 @@ public class GUI extends JFrame {
         lblAPartirDe.setBounds(88, 425, 304, 14);
         principal.getContentPane().add(lblAPartirDe);
         
-        lblNombreArtista_1 = new JLabel("NOMBRE                                                         ARTISTA");
-        lblNombreArtista_1.setForeground(Color.WHITE);
-        lblNombreArtista_1.setFont(new Font("Arial", Font.BOLD, 12));
-        lblNombreArtista_1.setBounds(63, 450, 369, 15);
-        principal.getContentPane().add(lblNombreArtista_1);
-        
-        
-        
-      //creación de los elememtos que componen la lista 
-        String[] nombres3 = {"Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena","Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena","Macarena","Ana","Margarita","Daniela","Divian", 
-        "Leslie","Paz","Andrea","Macarena"}; 
-        //creación del objeto lista 
-        JList lista3 = new JList(nombres3); 
-        lista3.setSelectionForeground(Color.GRAY);
-        lista3.setForeground(Color.BLACK);
-        lista3.setBackground(Color.WHITE);
-        lista3.setFont(new Font("Arial", Font.PLAIN, 12));
-       
-        //recoge el indice de los seleccionados 
-        int[] indices3 = lista3.getSelectedIndices(); 
-        // aquí se crea el objeto, es decir la barra de desplazamiento 
-        JScrollPane barraDesplazamiento3 = new JScrollPane(lista3); 
-        barraDesplazamiento3.setViewportBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-        barraDesplazamiento3.setBorder(new MatteBorder(1, 1, 1, 1, (Color) new Color(0, 0, 0)));
-        barraDesplazamiento3.setBounds(35, 477, 422, 126); 
-        //Agrega la barra de desplazamiento al panel 
-        principal.getContentPane().add(barraDesplazamiento3); 
+   
+		Object[][] info3={};
+		
+		model3=new MiModelo();
+		model3.setDataVector(info3, d);
+		
+		tabla3=new JTable(model3);
+		tabla3.setBounds(35, 477, 422, 126);
+		tabla3.getTableHeader().setFont(new Font("arial",Font.BOLD,12));
+		tabla3.getTableHeader().setForeground(Color.WHITE);
+		tabla3.getTableHeader().setBackground(new Color(63, 63, 112));
+		tabla3.setShowVerticalLines(false);
+		tabla3.setBackground(Color.GRAY);
+		tabla3.setForeground(Color.WHITE);
+		tabla3.setFont(new Font("arial",Font.BOLD,12));
+		tabla3.setGridColor(Color.LIGHT_GRAY);
+	    tabla3.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+	    
+	    JScrollPane scroll3=new JScrollPane(tabla3);
+	    scroll3.setFont(new Font("Calibri", Font.PLAIN, 12));
+	    scroll3.setBounds(35, 450, 422, 153);
+	    principal.getContentPane().add(scroll3);
+     
         
         button_1 = new JButton("");
         button_1.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn6.PNG"));
@@ -357,7 +375,7 @@ public class GUI extends JFrame {
         
       }
 	
-	private class MusicListener implements ActionListener{
+	private class MusicListener implements ActionListener,ItemListener{
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -367,7 +385,249 @@ public class GUI extends JFrame {
 				inicio.setVisible(false);
 			}
 			
+			
+			
+			if (e.getSource()==btnAgregar){
+				contador++;
+				int indice = tabla.getSelectedRow();
+				String[] newSong = info[indice];
+				String[][] playlistTemp1 = new String[contador][contador];
+				for (int i=0;i<(contador-1);i++){
+					playlistTemp1[i]=playlist[i];
+				}
+				
+				
+				if (Arrays.asList(playlistTemp1).contains(newSong)){
+					contador=contador-1;
+					model2.setDataVector(playlist, d);
+					tabla2.setModel(model2);
+					JOptionPane.showMessageDialog(null, "Esa canción ya existe en tu playlist.");
+				}
+				else{
+				playlistTemp1[contador-1] = newSong;
+				
+				
+				model2.setDataVector(playlistTemp1, d);
+				tabla2.setModel(model2);
+				playlist = playlistTemp1;
+				
+			   }
+			}
+			
+		}
+		
+		
+		
+		public void itemStateChanged(ItemEvent e) {
+			if(e.getSource()==comboBox){
+				
+				if(e.getStateChange()==ItemEvent.SELECTED){
+					
+					int cont;
+					String[][] temp;
+					switch(comboBox.getSelectedIndex()){
+					
+					case 0:
+						
+					
+					Canciones = database.getCanciones("Rock");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+					
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+					
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 1:
+						
+					
+					Canciones = database.getCanciones("Pop");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+						
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+						
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 2:
+						
+						
+					Canciones = database.getCanciones("Alternative");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+
+				    case 3:
+						
+						
+					Canciones = database.getCanciones("Electronic");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 4:
+						
+						
+					Canciones = database.getCanciones("R&B");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 5:
+						
+						
+					Canciones = database.getCanciones("Rap");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 6:	
+						
+					Canciones = database.getCanciones("Hip-Hop");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+				    case 7:
+						
+					Canciones = database.getCanciones("Country");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+					
+				    case 8:
+						
+						
+					Canciones = database.getCanciones("Dance");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+					
+				    case 9:
+						
+						
+					Canciones = database.getCanciones("Latino");
+					Artistas = database.getArtistas();
+					cont = Canciones.size();
+					temp = new String[cont][cont];
+							
+					for (int i=0; i<cont; i++){
+							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
+							temp[i] = temp2;	
+					}
+							
+					model.setDataVector(temp,d);
+					tabla.setModel(model);
+					info=temp;
+					break;
+					
+					}
+					
+		 		
+		     	}
+		
+			}
 		}
 	}
+			
+	
+	
+	
+	class MiModelo extends DefaultTableModel{
+		
+		public boolean isCellEditable (int filas,int Columnas){
+
+				return false;	
+		}
+	
+    }
+  
 }
+
 	
