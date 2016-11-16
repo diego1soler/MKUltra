@@ -47,6 +47,14 @@ import javax.swing.SwingConstants;
 import javax.swing.JSplitPane;
 import java.awt.Component;
 
+/**
+ * @author Diego Soler, Fredy Espana, Rodolfo Cacacho
+ * Proyecto 2 Fase 2. GUI del proyecto.
+ * Clase que maneja la interfaz grafica de Music4Me
+ * @version 16/11/2016
+ */
+
+
 public class GUI extends JFrame {
 
 	private JPanel contentPane;
@@ -55,10 +63,11 @@ public class GUI extends JFrame {
 	
 	private JButton btnCrearMiPlaylist;
 	private JPanel panel;
-	private JButton btnNewButton;
+	private JButton btnAcerca;
 	private JLabel icono;
 	private JTextArea txtrBienvenidoALa;
 	private JPanel panel2;
+	private int split;
 	private JComboBox<String> comboBox;
 	private JLabel lblGnero;
 	private JLabel lblCanciones;
@@ -74,12 +83,12 @@ public class GUI extends JFrame {
 	private JPanel panel_2;
 	private JPanel panel_3;
 	private JPanel panel_4;
-	private JButton button;
+	private JButton btnQuitar;
 	private JPanel panel_5;
 	private JLabel lblCancionesRecomendadas;
 	private JLabel lblAPartirDe;
 	private JScrollPane scrollPane;
-	private JButton button_1;
+	private JButton btnAgregar2;
 	private JPanel panel_6;
 	private JLabel lblNewLabel_2;
 	private final Vector<String> Generos;
@@ -93,7 +102,10 @@ public class GUI extends JFrame {
 	private MiModelo model3;
 	private int contador;
 	private String[][] playlist;
-	
+	private String[][] recommendation;
+	private int contador2;
+	private Vector<String> cancionesR;
+	private Vector<String> artistasR;
 
 
 	/**
@@ -101,6 +113,7 @@ public class GUI extends JFrame {
 	 */
 	public static void main(String[] args) {
 		
+					//Se abre la GUI
 				
 					GUI window = new GUI();
 					window.inicio.setVisible(true);
@@ -113,10 +126,27 @@ public class GUI extends JFrame {
 	 */
 	public GUI() {
 		database = new DbFunctions();
-		Generos = database.getGenero();
+		Generos = database.getGenero(); //Se llena el vector que llena el ComboBox de generos
 		contador=0;
+		contador2=0;
+		cancionesR = new Vector();
+		artistasR = new Vector();
+		playlist= new String[1][];
+		
 		initialize();
 		
+	}
+	
+	
+	//Metodo para remover una fila 
+	public String[][] removeRow(String[][] array, int row){
+	    int rows = array.length;
+	    String[][] arrayToReturn = new String[rows-1][];
+	    for(int i = 0; i < row; i++)
+	        arrayToReturn[i] = array[i];
+	    for(int i = row; i < arrayToReturn.length; i++)
+	        arrayToReturn[i++] = array[i];
+	    return arrayToReturn;
 	}
 	
 	public void initialize(){
@@ -240,10 +270,11 @@ public class GUI extends JFrame {
 	        
       
         
-        button = new JButton("");
-        button.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn4.png"));
-        button.setBounds(99, 291, 108, 33);
-        panel_1.add(button);
+        btnQuitar = new JButton("");
+        btnQuitar.addActionListener(new MusicListener());
+        btnQuitar.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn4.png"));
+        btnQuitar.setBounds(99, 291, 108, 33);
+        panel_1.add(btnQuitar);
         
         JLabel label = new JLabel("CANCIONES");
         label.setForeground(Color.WHITE);
@@ -308,6 +339,7 @@ public class GUI extends JFrame {
 		tabla3.setGridColor(Color.LIGHT_GRAY);
 	    tabla3.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
+	
 	    
 	    JScrollPane scroll3=new JScrollPane(tabla3);
 	    scroll3.setFont(new Font("Calibri", Font.PLAIN, 12));
@@ -315,10 +347,11 @@ public class GUI extends JFrame {
 	    principal.getContentPane().add(scroll3);
      
         
-        button_1 = new JButton("");
-        button_1.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn6.PNG"));
-        button_1.setBounds(183, 614, 108, 33);
-        principal.getContentPane().add(button_1);
+        btnAgregar2 = new JButton("");
+        btnAgregar2.addActionListener(new MusicListener());
+        btnAgregar2.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\btn6.PNG"));
+        btnAgregar2.setBounds(183, 614, 108, 33);
+        principal.getContentPane().add(btnAgregar2);
         
         panel_6 = new JPanel();
         panel_6.setBackground(Color.DARK_GRAY);
@@ -348,10 +381,11 @@ public class GUI extends JFrame {
 		btnCrearMiPlaylist.addActionListener(new MusicListener());
 		inicio.getContentPane().add(btnCrearMiPlaylist);
 		
-		btnNewButton = new JButton("");
-		btnNewButton.setBounds(95, 408, 109, 33);
-		btnNewButton.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\bt2.png"));
-		inicio.getContentPane().add(btnNewButton);
+		btnAcerca = new JButton("");
+		btnAcerca.addActionListener(new MusicListener());
+		btnAcerca.setBounds(95, 408, 109, 33);
+		btnAcerca.setIcon(new ImageIcon("C:\\Users\\Diego\\Desktop\\Proyecto\\bt2.png"));
+		inicio.getContentPane().add(btnAcerca);
 		
 		txtrBienvenidoALa = new JTextArea();
 		txtrBienvenidoALa.setForeground(Color.WHITE);
@@ -380,6 +414,8 @@ public class GUI extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
+			
+			//Se abre la pantalla principal
 			if (e.getSource()==btnCrearMiPlaylist){
 				principal.setVisible(true);
 				inicio.setVisible(false);
@@ -387,10 +423,123 @@ public class GUI extends JFrame {
 			
 			
 			
+			
 			if (e.getSource()==btnAgregar){
+				
+				
+				//Programacion defensiva, si no se ha seleccionado alguna opcion, se muestra el error
+				if(tabla.getSelectedRow()==-1){
+					JOptionPane.showMessageDialog(null, "No has seleccionado alguna canción.");
+					
+				}
+				else{
+				
+					
+				//Se llena la tabla de playlist, y se permite al usuario ingresar
 				contador++;
 				int indice = tabla.getSelectedRow();
 				String[] newSong = info[indice];
+				String[][] playlistTemp1 = new String[contador][contador];
+				for (int i=0;i<(contador-1);i++){
+					playlistTemp1[i]=playlist[i];
+				}
+				
+				
+				//Si la cancion a agregar ya esta en la playlist, se muestra el mensaje al usuario y se deja igual la playlist
+				if (Arrays.asList(playlist).contains(newSong)){
+					contador=contador-1;
+					model2.setDataVector(playlist, d);
+					tabla2.setModel(model2);
+					JOptionPane.showMessageDialog(null, "Esa canción ya existe en tu playlist.");
+				}
+				else{
+				//Si no, se agrega la nueva cancion a la playlist
+				playlistTemp1[contador-1] = newSong;
+				model2.setDataVector(playlistTemp1, d);
+				tabla2.setModel(model2);
+				playlist = playlistTemp1;
+				
+			   }
+				
+				
+				//Se hacen las recomendaciones con la canciones escogidas, y se agregan al vector de la tabla
+				Vector<String> temp= database.getRecomendadas(newSong[0]);
+				Vector<String> tempartistas = database.getArtistas2();
+			
+				//Programacion defensiva para no repetir recomendaciones
+				for (int i = 0; i<temp.size();i++){
+					if ((cancionesR.contains(temp.get(i))==false) && ((Arrays.asList(playlistTemp1).contains(temp.get(i)))==false)){
+						cancionesR.add(temp.get(i));
+						artistasR.add(tempartistas.get(i));
+					}
+					
+				}
+			
+				
+				contador2=cancionesR.size();
+				
+				String [][] temp2 = new String[contador2][contador2];
+		
+				//Se llena la playlist de recomendaciones
+				if(contador2!=0){
+				for (int i=0; i<contador2; i++){
+						String[] temp3 ={cancionesR.get(i),artistasR.get(i)};
+						temp2[i] = temp3;	
+				}
+				}
+					
+				
+				//Se llena la tabla
+				recommendation=temp2;		
+				model3.setDataVector(temp2,d);
+				tabla3.setModel(model3);	
+				
+			}
+		}
+			
+			
+			
+			
+			if (e.getSource()==btnQuitar){
+				
+				//Programacion defensiva
+				if(tabla2.getSelectedRow()==-1){
+					JOptionPane.showMessageDialog(null, "No has seleccionado alguna canción.");
+					
+				}
+				else{
+				
+				
+				//Se remueve una fila de la matriz de la playlist
+				int indice = tabla2.getSelectedRow();
+				
+				playlist = removeRow(playlist,indice);
+			
+				model2.setDataVector(playlist, d);
+				tabla2.setModel(model2);
+				contador = contador-1;
+				}
+				
+				
+			}
+			
+			
+			
+			if (e.getSource()==btnAgregar2){
+				
+				//AQUI SUCEDE EXACTAMENTE LA MISMA MAGIA DEL BOTON DE AGREGAR 1
+				
+				if(tabla3.getSelectedRow()==-1){
+					JOptionPane.showMessageDialog(null, "No has seleccionado alguna canción.");
+					
+				}
+				else{
+				
+				
+				
+				contador++;
+				int indice = tabla3.getSelectedRow();
+				String[] newSong = recommendation[indice];
 				String[][] playlistTemp1 = new String[contador][contador];
 				for (int i=0;i<(contador-1);i++){
 					playlistTemp1[i]=playlist[i];
@@ -405,13 +554,49 @@ public class GUI extends JFrame {
 				}
 				else{
 				playlistTemp1[contador-1] = newSong;
-				
-				
 				model2.setDataVector(playlistTemp1, d);
 				tabla2.setModel(model2);
 				playlist = playlistTemp1;
 				
-			   }
+			   }	
+				
+				
+				Vector<String> temp= database.getRecomendadas(newSong[0]);
+				Vector<String> tempartistas = database.getArtistas2();
+			
+				
+				for (int i = 0; i<temp.size();i++){
+					if ((cancionesR.contains(temp.get(i))==false) && ((Arrays.asList(playlistTemp1).contains(temp.get(i)))==false)){
+						cancionesR.add(temp.get(i));
+						artistasR.add(tempartistas.get(i));
+					}
+					
+				}
+			
+				
+				contador2=cancionesR.size();
+				
+				String [][] temp2 = new String[contador2][contador2];
+		
+				
+				if(contador2!=0){
+				for (int i=0; i<contador2; i++){
+						String[] temp3 ={cancionesR.get(i),artistasR.get(i)};
+						temp2[i] = temp3;	
+				}
+				}
+					
+				
+				recommendation=temp2;		
+				model3.setDataVector(temp2,d);
+				tabla3.setModel(model3);	
+				
+			}
+				
+			}
+			
+			if(e.getSource()==btnAcerca){
+				JOptionPane.showMessageDialog(null, "Music4Me - 2016 \nDiego Soler\nFredy España\nRodolfo Cacacho");
 			}
 			
 		}
@@ -421,25 +606,32 @@ public class GUI extends JFrame {
 		public void itemStateChanged(ItemEvent e) {
 			if(e.getSource()==comboBox){
 				
+				
+				
+				//MAGIA: Se llena la tabla con todas las canciones de la base de datos
 				if(e.getStateChange()==ItemEvent.SELECTED){
 					
 					int cont;
 					String[][] temp;
 					switch(comboBox.getSelectedIndex()){
 					
+					//Esto sucede con todas las opciones que puede escoger el usuario en el ComboBox
 					case 0:
 						
 					
+					//Se obtienen las canciones del nodo de cada genero especifico
 					Canciones = database.getCanciones("Rock");
-					Artistas = database.getArtistas();
+					Artistas = database.getArtistas(); //Se obtienen los artistass
 					cont = Canciones.size();
-					temp = new String[cont][cont];
+					temp = new String[cont][cont]; //Se crea una matriz temporal
 					
+					//Se va llenando la matriz temporal de canciones, dependiendo el genero
 					for (int i=0; i<cont; i++){
 							String[] temp2 ={Canciones.get(i),Artistas.get(i)};
 							temp[i] = temp2;	
 					}
 					
+					//Se llena la tabla
 					model.setDataVector(temp,d);
 					tabla.setModel(model);
 					info=temp;
@@ -618,7 +810,7 @@ public class GUI extends JFrame {
 			
 	
 	
-	
+	//Modelo para la tabla
 	class MiModelo extends DefaultTableModel{
 		
 		public boolean isCellEditable (int filas,int Columnas){
